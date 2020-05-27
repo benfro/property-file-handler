@@ -1,16 +1,18 @@
 package net.benfro.tools.property.data;
 
-import java.io.IOException;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import org.junit.jupiter.api.Test;
+
+import java.io.IOException;
+
+import static org.junit.jupiter.api.Assertions.*;
 
 
 
 class ChangeSetCalculatorTest {
    @Test
    void testEqualStatesYieldsEmptyDelta() throws IOException {
-      final PropertiesTable serverState = PropertiesTable.readPathFiltered("src/test/resources/simpleData", false);
-      final PropertiesTable webSheetState =  PropertiesTable.readPathFiltered("src/test/resources/simpleData", false);
+      final PropertiesTable serverState = PropertiesTable.readPathFiltered("src/test/resources/simpleData");
+      final PropertiesTable webSheetState =  PropertiesTable.readPathFiltered("src/test/resources/simpleData");
       assertTrue(ChangeSetCalculator.INSTANCE.calculateChangeSet(serverState, webSheetState).isEmpty());
    }
 
@@ -26,9 +28,9 @@ class ChangeSetCalculatorTest {
 
    @Test
    void testNonTranslatingPropertiesAtServerYieldsEmptyDelta() throws IOException {
-      final PropertiesTable serverState = PropertiesTable.readPathFiltered("src/test/resources/simpleData", false);
+      final PropertiesTable serverState = PropertiesTable.readPathFiltered("src/test/resources/simpleData");
       serverState.put(new ClassKeyBean("/jobb/nobb/Kobb", "jupp.nupp"), "en", "filterClosure.jpg");
-      final PropertiesTable webSheetState =  PropertiesTable.readPathFiltered("src/test/resources/simpleData", false);
+      final PropertiesTable webSheetState =  PropertiesTable.readPathFiltered("src/test/resources/simpleData");
       assertTrue(ChangeSetCalculator.INSTANCE.calculateChangeSet(serverState, webSheetState).isEmpty());
    }
 
@@ -43,6 +45,44 @@ class ChangeSetCalculatorTest {
    //   then: "it is empty"
    //   changeSet.isEmpty()
    //}
+
+   @Test
+   void nameRealSituationWithOriginalDataChanged() throws IOException {
+      //PropertiesTable serverState = PropertiesTable.readPathFiltered(BIGGER_DATA_PATH);
+      PropertiesTable serverState = null; //PropertiesTable.readPathFiltered(BIGGER_DATA_PATH);
+      serverState.put(new ClassKeyBean("/src/main/test/Data", "firstPicture"), "en", "filterClosure.png");
+      serverState.put(new ClassKeyBean("/src/main/test/Data", "someUrl"), "en", "loremIpsum.html");
+
+      PropertiesTable webSheetState = PropertiesTable.readPathFiltered("src/test/resources/simpleData");
+      ClassKeyBean keyOneRowId = new ClassKeyBean("/src/main/test/Data", "keyOne");
+      webSheetState.put(keyOneRowId, "en", "filterClosure");
+      webSheetState.put(keyOneRowId, "sv", "hoppla");
+      ClassKeyBean keyTwoRowId = new ClassKeyBean("/src/main/test/Data", "keyTwo");
+      webSheetState.put(keyTwoRowId, "fi", "Paska!");
+
+      PropertiesTable changeSet = ChangeSetCalculator.INSTANCE.calculateChangeSet(serverState, webSheetState);
+
+      assertEquals(3, changeSet.columnKeySet().size());
+
+      ProtoLocale en = new ProtoLocale("en");
+      ProtoLocale sv = new ProtoLocale("sv");
+      ProtoLocale fi = new ProtoLocale("fi");
+
+      assertTrue(changeSet.columnKeySet().contains(en));
+      assertTrue(changeSet.columnKeySet().contains(sv));
+      assertTrue(changeSet.columnKeySet().contains(fi));
+
+      assertEquals(5, changeSet.column(en).size());
+      assertEquals(2, changeSet.column(fi).size());
+      assertEquals(3, changeSet.column(sv).size());
+
+      assertEquals("filterClosure", changeSet.column(en).get(keyOneRowId));
+      assertEquals("valueTwo", changeSet.column(en).get(keyTwoRowId));
+      assertEquals("hoppla", changeSet.column(sv).get(keyOneRowId));
+      assertNotEquals("hoppla", changeSet.column(sv).get(keyTwoRowId));
+      assertEquals("Paska!", changeSet.column(fi).get(keyTwoRowId));
+   }
+
 
    //def "changeSet: simulate a real situation with original data changed"() {
    //   given: "there is a server state"

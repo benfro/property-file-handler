@@ -7,8 +7,8 @@ import java.util.regex.Pattern;
 
 public class ClassKeyBean implements Comparable<ClassKeyBean> {
 
-   final String clazz;
-   final String key;
+   public final String clazz;
+   public final String key;
 
    static ClassKeyBean of(String clazz, String key) {
       return new ClassKeyBean(clazz, key);

@@ -1,14 +1,15 @@
 package net.benfro.tools.property.data;
 
+import com.google.common.base.Splitter;
+import com.google.common.collect.*;
+import com.google.common.collect.Table.Cell;
+import net.benfro.tools.property.util.UnicodeUtils;
+
 import java.io.File;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import com.google.common.base.Splitter;
-import com.google.common.collect.*;
-import com.google.common.collect.Table.Cell;
-import net.benfro.tools.property.util.UnicodeUtils;
 
 
 
@@ -45,7 +46,7 @@ public class PropertiesTable {
    public static final String NEWLINE_CHARACTER = "\n";
    final Table<ClassKeyBean, ProtoLocale, String> table = TreeBasedTable.create();
 
-   PropertiesTable() {}
+   public PropertiesTable() {}
 
    PropertiesTable filterCopy(Filter filter) {
       Set<Cell<ClassKeyBean, ProtoLocale, String>> all = Sets.newHashSet();
@@ -61,7 +62,7 @@ public class PropertiesTable {
       return copy;
    }
 
-   void put(ClassKeyBean classKeyBean, ProtoLocale locale, String value) {
+   public void put(ClassKeyBean classKeyBean, ProtoLocale locale, String value) {
       try {
          table.put(classKeyBean, locale, value);
       } catch (NullPointerException e) {
@@ -118,7 +119,7 @@ public class PropertiesTable {
       return table.isEmpty();
    }
 
-   Set<Cell<ClassKeyBean, ProtoLocale, String>> cellSet() {
+   public Set<Cell<ClassKeyBean, ProtoLocale, String>> cellSet() {
       return table.cellSet();
    }
 

@@ -1,20 +1,39 @@
 package net.benfro.tools.property.data;
 
-import com.google.common.collect.*;
-import com.google.common.collect.Table.Cell;
-import net.benfro.tools.property.util.UnicodeUtils;
-
 import java.io.File;
+import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import com.google.common.base.Splitter;
+import com.google.common.collect.*;
+import com.google.common.collect.Table.Cell;
+import net.benfro.tools.property.util.UnicodeUtils;
 
 
 
 public class PropertiesTable {
 
-   static PropertiesTable readPathFiltered(String codeTreeBasePath) {
+   /**
+    * Calculate a change set to be written back to the base path, i.e the "effective delta" between server and web form state.
+    * Note that order of arguments is important; server state first, web form state after.
+    * This method can be hard to understand and can (should?) be treated as a black box, but some clarity can be
+    * obtained in documentation tied to Guava <code>Maps.difference</code>. Lots of Maps are used to describe
+    * differences at different levels of the data structures, and lots of nested closures are used to get results.
+    * @param serverState MUST be the first argument!
+    * @param webFormState MUST be the second argument!
+    * @return A PropertiesTable representing the effective delta between the two input states
+    */
+   static PropertiesTable calculateChangeSet(PropertiesTable serverState, PropertiesTable webFormState) {
+      return ChangeSetCalculator.INSTANCE.calculateChangeSet(serverState, webFormState);
+   }
+
+   static PropertiesTable readPathFiltered(String codeTreeBasePath) throws IOException {
       return PropertiesTableFactory.INSTANCE.readPathFiltered(codeTreeBasePath, true);
+   }
+
+   static PropertiesTable readPathFiltered(String codeTreeBasePath, boolean applyFilterForNonTranslatableData) throws IOException {
+      return PropertiesTableFactory.INSTANCE.readPathFiltered(codeTreeBasePath, applyFilterForNonTranslatableData);
    }
 
    public static final ProtoLocale DEFAULT_LOCALE = new ProtoLocale("en");
@@ -25,7 +44,6 @@ public class PropertiesTable {
    public static final String PROPERTY_KEY_COLUMN_HEADER = "propertyKey";
    public static final String NEWLINE_CHARACTER = "\n";
    final Table<ClassKeyBean, ProtoLocale, String> table = TreeBasedTable.create();
-
 
    PropertiesTable() {}
 
@@ -113,12 +131,11 @@ public class PropertiesTable {
    Map<ClassKeyBean, String> findAllEntriesForClassByLocale(String clazzString, ProtoLocale locale) {
       final Map<ClassKeyBean, String> result = Maps.newHashMap();
       final Map<ClassKeyBean, String> rowId2ValueMap = column(locale);
-      rowId2ValueMap.entrySet().forEach(e -> {
-                  if (clazzString.equals(e.getKey().getClazzForOS())) {
-                     result.put(e.getKey(), e.getValue());
-                  }
-               }
-      );
+      rowId2ValueMap.forEach((key, value) -> {
+         if (clazzString.equals(key.getClazzForOS())) {
+            result.put(key, value);
+         }
+      });
       return result;
    }
 
@@ -158,11 +175,11 @@ public class PropertiesTable {
       headerList.forEach(it -> stringBuilder.append(it).append(CSV_DELIMITER));
       stringBuilder.deleteCharAt(stringBuilder.lastIndexOf(CSV_DELIMITER));
       stringBuilder.append(NEWLINE_CHARACTER);
-      table.rowMap().entrySet().forEach(e -> {
-         stringBuilder.append(e.getKey().getClazzForOS().replace(File.separator, "/")).append(CSV_DELIMITER);
-         stringBuilder.append(e.getKey().key).append(CSV_DELIMITER);
+      table.rowMap().forEach((key, value) -> {
+         stringBuilder.append(key.getClazzForOS().replace(File.separator, "/")).append(CSV_DELIMITER);
+         stringBuilder.append(key.key).append(CSV_DELIMITER);
          columnsSortedWithEnFirst.forEach(localeColumnKey -> {
-            String valueString = get(e.getKey(), localeColumnKey);
+            String valueString = get(key, localeColumnKey);
             if (valueString != null) {
                String valueStrongNewLineEscaped = escapeNewLine(valueString);
                String convertedValue = UnicodeUtils.loadConvert(valueStrongNewLineEscaped);
@@ -177,63 +194,21 @@ public class PropertiesTable {
       return stringBuilder.toString();
    }
 
-   /**
-    * Export this table as a comma separated vector string
-    * @return A String containing data in this table
-    */
-   //String toCSV() {
-   //   def stringBuilder = new StringBuilder()
-   //   def headerList = [] << CLASS_COLUMN_HEADER << PROPERTY_KEY_COLUMN_HEADER
-   //   def columnSortedWithEnFirstList = customSortedLocaleKeyList()
-   //   columnSortedWithEnFirstList.each { headerList << it }
-   //   headerList.each { stringBuilder.append(it).append(CSV_DELIMITER) }
-   //   stringBuilder.deleteCharAt(stringBuilder.lastIndexOf(CSV_DELIMITER))
-   //   stringBuilder.append(NEWLINE_CHARACTER)
-   //   table.rowMap().each {
-   //      stringBuilder.append(it.key.clazzForOS.replace(File.separator, "/")).append(CSV_DELIMITER)
-   //      stringBuilder.append(it.key.key).append(CSV_DELIMITER)
-   //      columnSortedWithEnFirstList.each { localeColumnKey ->
-   //               def valueString = get(it.key, localeColumnKey as String)
-   //         if (valueString != null) {
-   //            String valueStrongNewLineEscaped = escapeNewLine(valueString)
-   //            String convertedValue = UnicodeUtils.loadConvert(valueStrongNewLineEscaped)
-   //            stringBuilder.append(convertedValue)
-   //            log.debug "Converted value added to CSV: ${convertedValue}"
-   //         }
-   //         stringBuilder.append(CSV_DELIMITER)
-   //      }
-   //      stringBuilder.deleteCharAt(stringBuilder.lastIndexOf(CSV_DELIMITER))
-   //      stringBuilder.append(NEWLINE_CHARACTER)
-   //   }
-   //   stringBuilder.toString()
-   //}
-
-   //List<List<Object>> toCSVListOfRows() {
-   //   def out = []
-   //   toCSV().split(NEWLINE_CHARACTER).each {
-   //      out.add(it)
-   //   }
-   //   out
-   //}
+   List<String> toCSVListOfRows() {
+      return Splitter.on(NEWLINE_CHARACTER).splitToList(toCSV());
+   }
 
    static String escapeNewLine(String valueString) {
       return valueString.replace("\\n", NEWLINE_SYMBOL_STRING);
    }
 
    /**
-    * @return A List<List<Object>> representing data in this table
+    * @return A List<List<String>> representing data in this table
     */
-   List<List<Object>> asValueRange() {
-      List<List<Object>> output = Lists.newArrayList();
-      //def rows = toCSV().split(NEWLINE_CHARACTER)
-      //rows.each { row ->
-      //         def rowList = []
-      //   def rowSplit = row.split(CSV_DELIMITER)
-      //   rowSplit.each { item ->
-      //            rowList << item
-      //   }
-      //   output << rowList
-      //}
+   List<List<String>> asValueRange() {
+      List<List<String>> output = Lists.newArrayList();
+      final List<String> listOfRowStrings = toCSVListOfRows();
+      listOfRowStrings.forEach(rowStr -> output.add(Splitter.on(CSV_DELIMITER).splitToList(rowStr)));
       return output;
    }
 

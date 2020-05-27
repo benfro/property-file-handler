@@ -34,6 +34,31 @@ public enum PropertiesTableFactory {
     * Handles a string in the typical format <code>this.is.the.key=value of property</code>
     * with line continuation markings as well as empty value strings.
     */
+   void forEachLineInPropertyFile(String propertyLine) {
+      if (lineHasContinuationMark) {
+         String valueString = instance.get(tempRowId, tempCurrentLocale);
+         valueString += propertyLine.trim();
+         instance.put(tempRowId, tempCurrentLocale, valueString);
+         lineHasContinuationMark = hasContinuationMark(propertyLine);
+      } else if (lineHasPropertyKey(propertyLine)) {
+         String[] splitPropertyEntry = propertyLine.split("=");
+         String propertyKey = splitPropertyEntry[0].trim();
+         ClassKeyBean tempRowId = new ClassKeyBean(tempClazzString, propertyKey);
+         if (splitPropertyEntry.length == 1) {
+            instance.put(tempRowId, tempCurrentLocale, "");
+         } else if (splitPropertyEntry.length == 2) {
+            String propertyValue = splitPropertyEntry[1].trim();
+            instance.put(tempRowId, tempCurrentLocale, propertyValue);
+            lineHasContinuationMark = hasContinuationMark(propertyLine);
+         }
+      }
+   }
+
+   /**
+    * Closure applied to each line in a processed properties file
+    * Handles a string in the typical format <code>this.is.the.key=value of property</code>
+    * with line continuation markings as well as empty value strings.
+    */
    // def forEachLineInPropertyFile = { String propertyLine ->
    // if (lineHasContinuationMark) {
    //    def valueString = instance.get(tempRowId, tempCurrentLocale)

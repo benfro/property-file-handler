@@ -1,12 +1,13 @@
 package net.benfro.tools.property.data;
 
+import com.google.common.collect.*;
+import com.google.common.collect.Table.Cell;
+import net.benfro.tools.property.util.UnicodeUtils;
+
 import java.io.File;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import com.google.common.collect.*;
-import com.google.common.collect.Table.Cell;
-import net.benfro.tools.property.util.UnicodeUtils;
 
 
 
@@ -149,6 +150,37 @@ public class PropertiesTable {
     * Export this table as a comma separated vector string
     * @return A String containing data in this table
     */
+   public String toCSV() {
+      StringBuilder stringBuilder = new StringBuilder();
+      List<String> headerList = Lists.newArrayList(CLASS_COLUMN_HEADER, PROPERTY_KEY_COLUMN_HEADER);
+      List<String> columnsSortedWithEnFirst = customSortedLocaleKeyList();
+      headerList.addAll(columnsSortedWithEnFirst);
+      headerList.forEach(it -> stringBuilder.append(it).append(CSV_DELIMITER));
+      stringBuilder.deleteCharAt(stringBuilder.lastIndexOf(CSV_DELIMITER));
+      stringBuilder.append(NEWLINE_CHARACTER);
+      table.rowMap().entrySet().forEach(e -> {
+         stringBuilder.append(e.getKey().getClazzForOS().replace(File.separator, "/")).append(CSV_DELIMITER);
+         stringBuilder.append(e.getKey().key).append(CSV_DELIMITER);
+         columnsSortedWithEnFirst.forEach(localeColumnKey -> {
+            String valueString = get(e.getKey(), localeColumnKey);
+            if (valueString != null) {
+               String valueStrongNewLineEscaped = escapeNewLine(valueString);
+               String convertedValue = UnicodeUtils.loadConvert(valueStrongNewLineEscaped);
+               stringBuilder.append(convertedValue);
+               //log.debug "Converted value added to CSV: ${convertedValue}"
+            }
+            stringBuilder.append(CSV_DELIMITER);
+         });
+         stringBuilder.deleteCharAt(stringBuilder.lastIndexOf(CSV_DELIMITER));
+         stringBuilder.append(NEWLINE_CHARACTER);
+      });
+      return stringBuilder.toString();
+   }
+
+   /**
+    * Export this table as a comma separated vector string
+    * @return A String containing data in this table
+    */
    //String toCSV() {
    //   def stringBuilder = new StringBuilder()
    //   def headerList = [] << CLASS_COLUMN_HEADER << PROPERTY_KEY_COLUMN_HEADER
@@ -238,16 +270,16 @@ public class PropertiesTable {
          String tempClassStringHolder = "";
          ClassKeyBean tempPrimaryKeyHolder = null;
          for (int i = 0; i < row.size(); i++) {
-            final String s = row.get(i);
+            final String value = row.get(i);
             switch (i) {
                case 0:
-                  tempClassStringHolder = s;
+                  tempClassStringHolder = value;
                   break;
                case 1:
-                  tempPrimaryKeyHolder = new ClassKeyBean(tempClassStringHolder, s);
+                  tempPrimaryKeyHolder = new ClassKeyBean(tempClassStringHolder, value);
                   break;
                default:
-                  String restoredNewLineValueString = restoreNewLine(s);
+                  String restoredNewLineValueString = restoreNewLine(value);
                   table.put(tempPrimaryKeyHolder, indexToLocaleMap.get(i), UnicodeUtils.saveConvert(restoredNewLineValueString));
                   break;
             }

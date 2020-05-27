@@ -2,7 +2,7 @@ package net.benfro.tools.property.util;
 
 public class UnicodeUtils {
 
-   static String loadConvert(String stringWithUnicode) {
+   public static String loadConvert(String stringWithUnicode) {
       return loadConvertInternal(stringWithUnicode.toCharArray(), 0, stringWithUnicode.length(), new char[1024]);
    }
 

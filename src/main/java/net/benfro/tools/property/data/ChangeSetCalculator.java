@@ -10,6 +10,16 @@ public enum ChangeSetCalculator {
 
    INSTANCE;
 
+   /**
+    * Calculate a change set to be written back to the base path, i.e the "effective delta" between server and web form state.
+    * Note that order of arguments is important; server state first, web form state after.
+    * This method can be hard to understand and can (should?) be treated as a black box, but some clarity can be
+    * obtained in documentation tied to Guava <code>Maps.difference</code>. Lots of Maps are used to describe
+    * differences at different levels of the data structures, and lots of nested closures are used to get results.
+    * @param serverState MUST be the first argument!
+    * @param webFormState MUST be the second argument!
+    * @return A PropertiesTable representing the effective delta between the two input states
+    */
    public PropertiesTable calculateChangeSet(PropertiesTable serverState, PropertiesTable webFormState) {
       PropertiesTable changeSet = new PropertiesTable();
 
@@ -30,8 +40,8 @@ public enum ChangeSetCalculator {
       final MapDifference<ProtoLocale, String> differenceForCurrentRowMap =
                Maps.difference(serverState.row(differingRowPK), webFormState.row(differingRowPK));
       // Gets a Map<Locale, webValue(String)>
-      final Map<ProtoLocale, String> localeToWebSheetStateMap = extractChangedWebSheetEntries(differenceForCurrentRowMap
-               .entriesDiffering());
+      final Map<ProtoLocale, String> localeToWebSheetStateMap =
+               extractChangedWebSheetEntries(differenceForCurrentRowMap.entriesDiffering());
       // Add all changes from empty to non-empty on server side iff they are (!= null && !isEmpty())
       differenceForCurrentRowMap.entriesOnlyOnRight().forEach((key, value) -> {
          if (value != null && !value.isEmpty()) {
@@ -52,7 +62,6 @@ public enum ChangeSetCalculator {
             }
          });
       });
-
    }
 
    private Map<ProtoLocale, String> extractChangedWebSheetEntries(Map<ProtoLocale, MapDifference.ValueDifference<String>> entriesDiffering) {
@@ -63,16 +72,5 @@ public enum ChangeSetCalculator {
       });
       return out;
    }
-
-   /**
-    * Calculate a change set to be written back to the base path, i.e the "effective delta" between server and web form state.
-    * Note that order of arguments is important; server state first, web form state after.
-    * This method can be hard to understand and can (should?) be treated as a black box, but some clarity can be
-    * obtained in documentation tied to Guava <code>Maps.difference</code>. Lots of Maps are used to describe
-    * differences at different levels of the data structures, and lots of nested closures are used to get results.
-    * @param serverState MUST be the first argument!
-    * @param webFormState MUST be the second argument!
-    * @return A PropertiesTable representing the effective delta between the two input states
-    */
 
 }

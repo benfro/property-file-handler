@@ -148,20 +148,7 @@ public class PropertyTable {
       return "";
    }
 
-   /**
-    * Put English locale first in column list
-    */
-   List<String> customSortedLocaleKeyList() {
-      ProtoLocale locale = DEFAULT_LOCALE;
-      List<ProtoLocale> list = Lists.newArrayList(columnKeySet());
-      boolean localeWasInColumnKeySet = list.remove(locale);
-      List<String> out = Lists.newArrayList();
-      if (localeWasInColumnKeySet) {
-         out.add(locale.getLanguage());
-      }
-      list.forEach(it -> out.add(it.getLanguage()));
-      return out;
-   }
+
 
    /**
     * Export this table as a comma separated vector string
@@ -170,7 +157,7 @@ public class PropertyTable {
    public String toCSV() {
       StringBuilder stringBuilder = new StringBuilder();
       List<String> headerList = Lists.newArrayList(CLASS_COLUMN_HEADER, PROPERTY_KEY_COLUMN_HEADER);
-      List<String> columnsSortedWithEnFirst = customSortedLocaleKeyList();
+      List<String> columnsSortedWithEnFirst = LocaleRegistry.INSTANCE.customSortedLocaleKeyList();
       headerList.addAll(columnsSortedWithEnFirst);
       headerList.forEach(it -> stringBuilder.append(it).append(CSV_DELIMITER));
       stringBuilder.deleteCharAt(stringBuilder.lastIndexOf(CSV_DELIMITER));

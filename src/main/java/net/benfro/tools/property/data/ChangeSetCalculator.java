@@ -27,12 +27,12 @@ public enum ChangeSetCalculator {
       final Map<ClassKeyBean, MapDifference.ValueDifference<Map<ProtoLocale, String>>> rowDifferenceBetweenStatesMap =
                Maps.difference(serverState.rowMap(), webFormState.rowMap()).entriesDiffering();
 
-      rowDifferenceBetweenStatesMap.keySet().forEach(k -> forEachKeyInRowDifferenceBetweenStatesMap(k, serverState, webFormState, changeSet));
+      rowDifferenceBetweenStatesMap.keySet().forEach(k -> keyInRowDifferenceBetweenStatesMap(k, serverState, webFormState, changeSet));
 
       return changeSet;
    }
 
-   void forEachKeyInRowDifferenceBetweenStatesMap(
+   void keyInRowDifferenceBetweenStatesMap(
             ClassKeyBean differingRowPK,
             PropertyTable serverState,
             PropertyTable webFormState,

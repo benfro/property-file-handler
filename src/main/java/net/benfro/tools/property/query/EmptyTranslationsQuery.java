@@ -1,12 +1,12 @@
 package net.benfro.tools.property.query;
 
-import net.benfro.tools.property.data.PropertiesTable;
+import net.benfro.tools.property.data.PropertyTable;
 
 
 
 public class EmptyTranslationsQuery implements PropertiesQuery {
    @Override
-   public PropertiesTable performQuery(PropertiesTable propertiesTable) {
+   public PropertyTable performQuery(PropertyTable propertyTable) {
       return null;
    }
 

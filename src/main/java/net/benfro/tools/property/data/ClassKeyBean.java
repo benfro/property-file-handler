@@ -14,7 +14,7 @@ public class ClassKeyBean implements Comparable<ClassKeyBean> {
       return new ClassKeyBean(clazz, key);
    }
 
-   ClassKeyBean(String clazz, String key) {
+   private ClassKeyBean(String clazz, String key) {
       this.clazz = clazz.replaceAll(Pattern.quote(File.separator), "/");
       this.key = key;
    }

@@ -1,7 +1,7 @@
 package net.benfro.tools.property.query;
 
 import com.google.common.collect.Lists;
-import net.benfro.tools.property.data.PropertiesTable;
+import net.benfro.tools.property.data.PropertyTable;
 
 import java.util.List;
 import java.util.Objects;
@@ -13,9 +13,9 @@ public class ValueNotEndsWithQuery implements PropertiesQuery {
            Lists.newArrayList(".jpg", ".JPG", ".png", ".PNG", ".icon", ".htm", ".html");
 
    @Override
-   public PropertiesTable performQuery(PropertiesTable propertiesTable) {
-      PropertiesTable output = new PropertiesTable();
-      propertiesTable.cellSet().forEach(it -> {
+   public PropertyTable performQuery(PropertyTable propertyTable) {
+      PropertyTable output = new PropertyTable();
+      propertyTable.cellSet().forEach(it -> {
          boolean result = NOT_END_WITH
                  .stream()
                  .filter(item -> Objects.nonNull(it.getValue()))

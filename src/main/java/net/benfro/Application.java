@@ -1,5 +1,13 @@
 package net.benfro;
 
+import com.google.common.collect.Lists;
+import net.benfro.tools.property.data.PropertyDatabase;
+import net.benfro.tools.property.data.PropertyTable;
+import net.benfro.tools.property.query.*;
+import org.apache.commons.cli.*;
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang3.StringUtils;
+
 import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;
@@ -7,13 +15,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Scanner;
 import java.util.stream.Collectors;
-import com.google.common.collect.Lists;
-import net.benfro.tools.property.data.PropertiesTable;
-import net.benfro.tools.property.data.PropertyDatabase;
-import net.benfro.tools.property.query.*;
-import org.apache.commons.cli.*;
-import org.apache.commons.io.FileUtils;
-import org.apache.commons.lang3.StringUtils;
 
 
 
@@ -89,7 +90,7 @@ public class Application {
       }
       if (index <= 1) {
          final PropertiesQuery propertiesQuery = (PropertiesQuery)queries.get(index);
-         final PropertiesTable resultFromQuery = propertiesQuery.performQuery(propertyFileDatabase.getPropertiesTable());
+         final PropertyTable resultFromQuery = propertiesQuery.performQuery(propertyFileDatabase.getPropertiesTable());
          System.out.println(resultFromQuery.toCSV());
       } else {
          final DefaultFrequencyTable fTable = (DefaultFrequencyTable) queries.get(index);
@@ -101,8 +102,11 @@ public class Application {
    }
 
    private void createDatabase(String databasePath) {
-      propertyFileDatabase = new PropertyDatabase(databasePath);
-      propertyFileDatabase.readBasePathProperties();
+      try {
+         propertyFileDatabase = new PropertyDatabase(databasePath);
+      } catch (IOException e) {
+         e.printStackTrace();
+      }
       System.out.println("Database created");
    }
 

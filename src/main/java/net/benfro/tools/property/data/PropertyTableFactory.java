@@ -1,18 +1,20 @@
 package net.benfro.tools.property.data;
 
+import net.benfro.tools.property.query.FullLineFilteringQuery;
+import net.benfro.tools.property.query.ValueNotEndsWithQuery;
+import net.benfro.tools.property.query.ValueNotStartsWithQuery;
+
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
+
 import static java.nio.file.FileVisitResult.CONTINUE;
-import net.benfro.tools.property.query.FullLineFilteringQuery;
-import net.benfro.tools.property.query.ValueNotEndsWithQuery;
-import net.benfro.tools.property.query.ValueNotStartsWithQuery;
 
 
 
-public enum PropertiesTableFactory {
+public enum PropertyTableFactory {
 
    INSTANCE;
 
@@ -20,7 +22,6 @@ public enum PropertiesTableFactory {
    ProtoLocale tempCurrentLocale;
    boolean lineHasContinuationMark;
    ClassKeyBean tempRowId;
-   //PropertiesTable instance = new PropertiesTable();
    public static final String FS = File.separator;
 
    /**
@@ -29,8 +30,8 @@ public enum PropertiesTableFactory {
     * @param applyFilterForNonTranslationableData If <code>true</code>, resources like pictures
     * and URL will not be included in the search as they are not intended for translation
     */
-   PropertiesTable readPathFiltered(String codeTreeBasePath, boolean applyFilterForNonTranslationableData) throws IOException {
-      PropertiesTable instance = new PropertiesTable();
+   PropertyTable readPathFiltered(String codeTreeBasePath, boolean applyFilterForNonTranslationableData) throws IOException {
+      PropertyTable instance = new PropertyTable();
 
       Files.walkFileTree(Paths.get(codeTreeBasePath), new FileVisitor<Path>() {
          @Override
@@ -59,7 +60,7 @@ public enum PropertiesTableFactory {
       });
 
       if (applyFilterForNonTranslationableData) {
-         PropertiesTable copy = new FullLineFilteringQuery().performQuery(instance);
+         PropertyTable copy = new FullLineFilteringQuery().performQuery(instance);
          copy = new ValueNotEndsWithQuery().performQuery(copy);
          copy = new ValueNotStartsWithQuery().performQuery(copy);
          return copy;
@@ -88,7 +89,7 @@ public enum PropertiesTableFactory {
     * Handles a string in the typical format <code>this.is.the.key=value of property</code>
     * with line continuation markings as well as empty value strings.
     */
-   void forEachLineInPropertyFile(String propertyLine, PropertiesTable instance) {
+   void forEachLineInPropertyFile(String propertyLine, PropertyTable instance) {
       propertyLine = propertyLine.trim();
       if (lineHasContinuationMark) {
          String valueString = instance.get(tempRowId, tempCurrentLocale);
@@ -98,7 +99,7 @@ public enum PropertiesTableFactory {
       } else if (lineHasPropertyKey(propertyLine)) {
          String[] splitPropertyEntry = propertyLine.split("=");
          String propertyKey = splitPropertyEntry[0].trim();
-         ClassKeyBean tempRowId = new ClassKeyBean(tempClazzString, propertyKey);
+         ClassKeyBean tempRowId = ClassKeyBean.of(tempClazzString, propertyKey);
          if (splitPropertyEntry.length == 1) {
             instance.put(tempRowId, tempCurrentLocale, "");
          } else if (splitPropertyEntry.length == 2) {
@@ -109,7 +110,7 @@ public enum PropertiesTableFactory {
       }
    }
 
-   void fileProcessingClojure(Path file, String codeTreeBasePath, PropertiesTable instance) {
+   void fileProcessingClojure(Path file, String codeTreeBasePath, PropertyTable instance) {
       final String filePath = file.toFile().toString();
       if (filePath.contains(FS + "src" + FS + "main" + FS)) {
          int lastIndexOfUnderscore = filePath.lastIndexOf("_");
@@ -117,13 +118,13 @@ public enum PropertiesTableFactory {
             lastIndexOfUnderscore = -1;
          }
          if (lastIndexOfUnderscore == -1) {
-            tempCurrentLocale = PropertiesTable.DEFAULT_LOCALE;
+            tempCurrentLocale = PropertyTable.DEFAULT_LOCALE;
             tempClazzString = filePath
                      .substring(0, filePath.lastIndexOf('.'))
                      .substring(codeTreeBasePath.length())
                      .replace(File.separator, "/");
          } else {
-            tempCurrentLocale = new ProtoLocale(filePath.substring(lastIndexOfUnderscore + 1, lastIndexOfUnderscore + 3));
+            tempCurrentLocale = LocaleRegistry.INSTANCE.get(filePath.substring(lastIndexOfUnderscore + 1, lastIndexOfUnderscore + 3));
             tempClazzString = filePath
                      .substring(0, lastIndexOfUnderscore)
                      .substring(codeTreeBasePath.length())

@@ -6,9 +6,13 @@ import java.util.Locale;
 
 public class ProtoLocale implements Comparable<ProtoLocale> {
 
+   public static ProtoLocale of(String language) {
+      return new ProtoLocale(language);
+   }
+
    final Locale locale;
 
-   ProtoLocale(String language) {
+   private ProtoLocale(String language) {
       locale = new Locale(language);
    }
 

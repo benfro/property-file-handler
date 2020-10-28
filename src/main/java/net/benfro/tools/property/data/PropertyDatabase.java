@@ -10,53 +10,32 @@ import java.util.Collection;
 import java.util.List;
 
 
+public class PropertyDatabase {
 
-public class PropertyDatabase implements PropertyFileDAO {
-
-   public static final ProtoLocale DEFAULT_LOCALE = new ProtoLocale("en");
    public static final String FS = File.separator;
 
    private final String codeTreeBasePath;
-   private PropertiesTable propertiesTable = new PropertiesTable();
+   private final PropertyTable propertyTable;
 
-   public PropertyDatabase(String codeTreeBasePath) {
+   public PropertyDatabase(String codeTreeBasePath) throws IOException {
       this.codeTreeBasePath = codeTreeBasePath;
+      propertyTable = PropertyTable.readPathFiltered(codeTreeBasePath);
    }
 
-   @Override
-   public PropertiesTable readBasePathProperties() {
-      try {
-         propertiesTable = PropertiesTable.readPathFiltered(codeTreeBasePath);
-      } catch (IOException e) {
-         e.printStackTrace();
-      }
-      return propertiesTable;
-   }
-
-   PropertiesTable readBasePathPropertiesWithoutFilter() {
-      try {
-         propertiesTable = PropertiesTable.readPathFiltered(codeTreeBasePath);
-      } catch (IOException e) {
-         e.printStackTrace();
-      }
-      return propertiesTable;
-   }
-
-   @Override
    public FilePushBackReport pushBasePathProperties(List<List<String>> webSheetState) {
       // Make a report of work done during pushback
       FilePushBackReport pushBackReport = new FilePushBackReport();
       // Load current state of the properties file from file base path
-      PropertiesTable serverState = null;
+      PropertyTable serverState = null;
       try {
-         serverState = PropertiesTable.readPathFiltered(codeTreeBasePath, false);
+         serverState = PropertyTable.readPathFiltered(codeTreeBasePath, false);
       } catch (IOException e) {
          e.printStackTrace();
       }
       loadDataIntoTable(webSheetState);
-      PropertiesTable changeSet = PropertiesTable.calculateChangeSet(serverState, this.propertiesTable);
+      PropertyTable changeSet = PropertyTable.calculateChangeSet(serverState, this.propertyTable);
       FileDataObject fileDataObject = new FileDataObject(changeSet);
-      fileDataObject.keySet().forEach ( filePathKey -> {
+      fileDataObject.keySet().forEach(filePathKey -> {
          String directory = filePathKey.substring(0, filePathKey.lastIndexOf(FS));
          String fileName = filePathKey.substring(filePathKey.lastIndexOf(FS) + 1);
          Path file = null;
@@ -92,30 +71,23 @@ public class PropertyDatabase implements PropertyFileDAO {
    }
 
    /**
-    * A view of this database as a <code>List</code> of <code>List</code>s. Inner list are rows
-    */
-   List<List<String>> asValueRangeValue() {
-      return propertiesTable.asValueRange();
-   }
-
-   /**
     * A CSV view of this database separated by semi-colons
     */
    public String asCSV() {
-      return propertiesTable.toCSV();
+      return propertyTable.toCSV();
    }
 
    public List<String> asListOfCSVRows() {
-      return propertiesTable.toCSVListOfRows();
+      return propertyTable.toCSVListOfRows();
    }
 
    void loadDataIntoTable(List<List<String>> lists) {
-      propertiesTable.clear();
-      propertiesTable.loadDataIntoTable(lists);
+      propertyTable.clear();
+      propertyTable.loadDataIntoTable(lists);
    }
 
-   public PropertiesTable getPropertiesTable() {
-      return propertiesTable;
+   public PropertyTable getPropertiesTable() {
+      return propertyTable;
    }
 
 

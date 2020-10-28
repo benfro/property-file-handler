@@ -13,7 +13,7 @@ import java.util.Set;
 
 
 
-public class PropertiesTable {
+public class PropertyTable {
 
    /**
     * Calculate a change set to be written back to the base path, i.e the "effective delta" between server and web form state.
@@ -25,20 +25,19 @@ public class PropertiesTable {
     * @param webFormState MUST be the second argument!
     * @return A PropertiesTable representing the effective delta between the two input states
     */
-   static PropertiesTable calculateChangeSet(PropertiesTable serverState, PropertiesTable webFormState) {
+   static PropertyTable calculateChangeSet(PropertyTable serverState, PropertyTable webFormState) {
       return ChangeSetCalculator.INSTANCE.calculateChangeSet(serverState, webFormState);
    }
 
-   static PropertiesTable readPathFiltered(String codeTreeBasePath) throws IOException {
-      return PropertiesTableFactory.INSTANCE.readPathFiltered(codeTreeBasePath, true);
+   static PropertyTable readPathFiltered(String codeTreeBasePath) throws IOException {
+      return PropertyTableFactory.INSTANCE.readPathFiltered(codeTreeBasePath, true);
    }
 
-   static PropertiesTable readPathFiltered(String codeTreeBasePath, boolean applyFilterForNonTranslatableData) throws IOException {
-      return PropertiesTableFactory.INSTANCE.readPathFiltered(codeTreeBasePath, applyFilterForNonTranslatableData);
+   static PropertyTable readPathFiltered(String codeTreeBasePath, boolean applyFilterForNonTranslatableData) throws IOException {
+      return PropertyTableFactory.INSTANCE.readPathFiltered(codeTreeBasePath, applyFilterForNonTranslatableData);
    }
 
-   public static final ProtoLocale DEFAULT_LOCALE = new ProtoLocale("en");
-   public static final String FS = File.separator;
+   public static final ProtoLocale DEFAULT_LOCALE = LocaleRegistry.INSTANCE.getDefault();
    private static final String CSV_DELIMITER = ";";
    public static final String NEWLINE_SYMBOL_STRING = "[NL]";
    public static final String CLASS_COLUMN_HEADER = "class";
@@ -46,9 +45,9 @@ public class PropertiesTable {
    public static final String NEWLINE_CHARACTER = "\n";
    final Table<ClassKeyBean, ProtoLocale, String> table = TreeBasedTable.create();
 
-   public PropertiesTable() {}
+   public PropertyTable() {}
 
-   PropertiesTable filterCopy(Filter filter) {
+   PropertyTable filterCopy(Filter filter) {
       Set<Cell<ClassKeyBean, ProtoLocale, String>> all = Sets.newHashSet();
       for (Cell<ClassKeyBean, ProtoLocale, String> cell : cellSet()) {
          if (filter.apply(cell.getValue())) {
@@ -56,7 +55,7 @@ public class PropertiesTable {
          }
       }
 
-      PropertiesTable copy = new PropertiesTable();
+      PropertyTable copy = new PropertyTable();
       all.forEach(it -> copy.put(it.getRowKey(), it.getColumnKey(), it.getValue()));
 
       return copy;
@@ -71,11 +70,11 @@ public class PropertiesTable {
    }
 
    void put(ClassKeyBean classKeyBean, String locale, String value) {
-      this.put(classKeyBean, new ProtoLocale(locale), value);
+      this.put(classKeyBean, LocaleRegistry.INSTANCE.get(locale), value);
    }
 
    void put(String classString, String key, String locale, String value) {
-      this.put(new ClassKeyBean(classString, key), locale, value);
+      this.put(ClassKeyBean.of(classString, key), locale, value);
    }
 
    Map<ClassKeyBean, Map<ProtoLocale, String>> rowMap() {
@@ -96,11 +95,11 @@ public class PropertiesTable {
    }
 
    String get(ClassKeyBean classKeyBean, String locale) {
-      return this.get(classKeyBean, new ProtoLocale(locale));
+      return this.get(classKeyBean, LocaleRegistry.INSTANCE.get(locale));
    }
 
    String get(String clazzString, String propertyKey, String locale) {
-      return this.get(new ClassKeyBean(clazzString, propertyKey), new ProtoLocale(locale));
+      return this.get(ClassKeyBean.of(clazzString, propertyKey), LocaleRegistry.INSTANCE.get(locale));
    }
 
    Set<ProtoLocale> columnKeySet() {
@@ -153,7 +152,7 @@ public class PropertiesTable {
     * Put English locale first in column list
     */
    List<String> customSortedLocaleKeyList() {
-      ProtoLocale locale = new ProtoLocale("en");
+      ProtoLocale locale = DEFAULT_LOCALE;
       List<ProtoLocale> list = Lists.newArrayList(columnKeySet());
       boolean localeWasInColumnKeySet = list.remove(locale);
       List<String> out = Lists.newArrayList();
@@ -233,7 +232,7 @@ public class PropertiesTable {
          for (int i = 0; i < row.size(); i++) {
             String s = row.get(i);
             if (s.length() == 2) {
-               indexToLocaleMap.put(i, new ProtoLocale(s));
+               indexToLocaleMap.put(i, LocaleRegistry.INSTANCE.get(s));
             }
          }
       }
@@ -252,7 +251,7 @@ public class PropertiesTable {
                   tempClassStringHolder = value;
                   break;
                case 1:
-                  tempPrimaryKeyHolder = new ClassKeyBean(tempClassStringHolder, value);
+                  tempPrimaryKeyHolder = ClassKeyBean.of(tempClassStringHolder, value);
                   break;
                default:
                   String restoredNewLineValueString = restoreNewLine(value);

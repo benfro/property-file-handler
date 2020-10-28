@@ -1,8 +1,9 @@
 package net.benfro.tools.property.data;
 
-import java.util.Map;
 import com.google.common.collect.MapDifference;
 import com.google.common.collect.Maps;
+
+import java.util.Map;
 
 
 
@@ -20,8 +21,8 @@ public enum ChangeSetCalculator {
     * @param webFormState MUST be the second argument!
     * @return A PropertiesTable representing the effective delta between the two input states
     */
-   public PropertiesTable calculateChangeSet(PropertiesTable serverState, PropertiesTable webFormState) {
-      PropertiesTable changeSet = new PropertiesTable();
+   public PropertyTable calculateChangeSet(PropertyTable serverState, PropertyTable webFormState) {
+      PropertyTable changeSet = new PropertyTable();
 
       final Map<ClassKeyBean, MapDifference.ValueDifference<Map<ProtoLocale, String>>> rowDifferenceBetweenStatesMap =
                Maps.difference(serverState.rowMap(), webFormState.rowMap()).entriesDiffering();
@@ -33,9 +34,9 @@ public enum ChangeSetCalculator {
 
    void forEachKeyInRowDifferenceBetweenStatesMap(
             ClassKeyBean differingRowPK,
-            PropertiesTable serverState,
-            PropertiesTable webFormState,
-            PropertiesTable changeSet) {
+            PropertyTable serverState,
+            PropertyTable webFormState,
+            PropertyTable changeSet) {
       // Gets a Map<Locale, [serverValue(String), webValue(String)]>
       final MapDifference<ProtoLocale, String> differenceForCurrentRowMap =
                Maps.difference(serverState.row(differingRowPK), webFormState.row(differingRowPK));
